@@ -1,4 +1,4 @@
-import SpaceInvaders.SpaceInvaders;
+import GameOfLive.GameOfLive;
 import com.googlecode.lanterna.TerminalFacade;
 import com.googlecode.lanterna.gui.Action;
 import com.googlecode.lanterna.gui.Component;
@@ -143,7 +143,8 @@ public class MojaAplikacjaLanterna {
 //		test1();
 //		test2();
 //		test3();
-		SpaceInvaders.play();
+//		SpaceInvaders.play();
+		GameOfLive.play();
 	}
 	
 }
