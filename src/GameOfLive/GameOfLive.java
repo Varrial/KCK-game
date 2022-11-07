@@ -27,7 +27,7 @@ public class GameOfLive {
 		Thread.currentThread();
 		terminal.setCursorVisible(false);
 		
-		boolean[][] board = new boolean[terminal.getTerminalSize().getColumns()]
+		boolean[][] board = new boolean[terminal.getTerminalSize().getColumns()/2]
 										[terminal.getTerminalSize().getRows()];
 		
 		board = prepareNewBoard(board);
@@ -64,11 +64,13 @@ public class GameOfLive {
 	private static void printBoard(boolean [][] board, Terminal terminal){
 		for (int i = 0; i < board.length; i++) {
 			for (int j = 0; j < board[i].length; j++) {
-				terminal.moveCursor(i, j);
+				terminal.moveCursor(2*i, j);
 				if (board[i][j]){
 //					terminal.putCharacter('■');
 					terminal.putCharacter('█');
+					terminal.putCharacter('▋');
 				} else {
+					terminal.putCharacter(' ');
 					terminal.putCharacter(' ');
 				}
 			}
