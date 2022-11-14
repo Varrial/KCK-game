@@ -12,25 +12,31 @@ import java.util.List;
 
 
 public class SpaceInvaders {
+	
+	private static int punkty = 1;
+	
 	public static void play(){
 		final GUIScreen guiScreen = TerminalFacade.createGUIScreen();
 		Terminal terminal = TerminalFacade.createTerminal(Charset.forName("UTF8"));
 		terminal.enterPrivateMode();
 		
+		terminal.setCursorVisible(false);
+		
 		final int terminalX = terminal.getTerminalSize().getColumns();
 		final int terminalY = terminal.getTerminalSize().getRows();
+		punkty = -1;
 		
 		final int playerMinX = 0;
 		final int playerMaxX = terminalX;
-		final int playerMinY = terminalY - 3;
-		final int playerMaxY = terminalY;
+		final int playerMinY = terminalY - 5;
+		final int playerMaxY = terminalY - 3;
 		
 		final int maxMovementInterval = 300;
 		final int botMovementInterval = 100;
 		final int botSpawnInterval = 300;
 		final int shotMoveInterval = 10;
 		
-		
+		prepareScreen(terminal);
 		
 		int X = playerMaxX / 2;
 		int Y = playerMinY + 1;
@@ -41,7 +47,6 @@ public class SpaceInvaders {
 		
 		
 		Thread.currentThread();
-		terminal.setCursorVisible(false);
 		List<Bot> bots = new ArrayList<>();
 		List<Shot> shots = new ArrayList<>();
 		
@@ -55,7 +60,8 @@ public class SpaceInvaders {
 			}
 			
 			if (movement % botMovementInterval == 0){
-				moveBots(bots);
+				if (moveBotsAndCheckGameOver(bots))
+					gameOver(terminal);
 			}
 			
 			if (movement % botSpawnInterval == 0){
@@ -63,7 +69,7 @@ public class SpaceInvaders {
 			}
 			
 			if (movement % shotMoveInterval == 0){
-				moveShots(shots, bots);
+				moveShots(shots, bots, terminal);
 			}
 			
 			movement ++;
@@ -84,17 +90,24 @@ public class SpaceInvaders {
 			if (key == Key.Kind.ArrowUp && Y > playerMinY){
 				Y -= 1;
 			}
-			if (key == Key.Kind.ArrowDown && Y < playerMaxY){
+			else if (key == Key.Kind.ArrowDown && Y < playerMaxY){
 				Y += 1;
 			}
-			if (key == Key.Kind.ArrowLeft && X > playerMinX){
+			else if (key == Key.Kind.ArrowLeft && X > playerMinX){
 				X -= 1;
 			}
-			if (key == Key.Kind.ArrowRight && X < playerMaxX){
+			else if (key == Key.Kind.ArrowRight && X < playerMaxX){
 				X += 1;
 			}
-			if (key == Key.Kind.NormalKey) {
+			else if (key == Key.Kind.NormalKey) {
 				shots.add(new Shot(terminal, X, Y-1));
+			}
+			else if (key == Key.Kind.Escape) {
+				terminal.exitPrivateMode();
+				menu.menu.menu();
+			} else if (key == Key.Kind.Enter) {
+				terminal.exitPrivateMode();
+				SpaceInvaders.play();
 			}
 			terminal.moveCursor(X, Y);
 			terminal.putCharacter('^');
@@ -102,13 +115,15 @@ public class SpaceInvaders {
 		
 	}
 	
-	private static void moveBots(List<Bot> bots){
+	private static boolean moveBotsAndCheckGameOver(List<Bot> bots){
 		for (Bot bot : bots) {
-			bot.move();
+			if (bot.moveAndCheckGameOver())
+				return true;
 		}
+		return false;
 	}
 	
-	private static void moveShots(List<Shot> shots, List<Bot> bots) {
+	private static void moveShots(List<Shot> shots, List<Bot> bots, Terminal terminal) {
 		Iterator<Shot> shotIterator = shots.listIterator();
 		while (shotIterator.hasNext()){
 			Shot shot = shotIterator.next();
@@ -117,6 +132,7 @@ public class SpaceInvaders {
 			while (botIterator.hasNext()){
 				Bot bot = botIterator.next();
 				
+//				punkty += 1
 				if (shot.getY() == bot.getY() && shot.getX() == bot.getX()){
 					shot.remove();
 					shot = null;
@@ -125,12 +141,13 @@ public class SpaceInvaders {
 					bot.remove();
 					bot = null;
 					botIterator.remove();
+					dodajPunkty(terminal);
 					break;
 				}
 			}
 			if (shot != null){
 				shot.move();
-				if (shot.getY() < 0) {
+				if (shot.getY() < 2) {
 					shot.remove();
 					shot = null;
 					shotIterator.remove();
@@ -139,12 +156,101 @@ public class SpaceInvaders {
 		}
 	}
 	
-	private static void generateNewBots(List<Bot> bots, Terminal terminal ,int minX, int maxX){
-		final int between = 10;
+	private static void generateNewBots(List<Bot> bots, Terminal terminal, int minX, int maxX){
+		final int between = utilities.getRandomNumber(0, 10);
 		
-		for (int i = minX; i <= maxX; i++) {
-			if (i % between == 5)
+		for (int i = minX+2; i < maxX; i+=between) {
+			if (utilities.getRandomNumber(0, 5) == 0)
 				bots.add(new Bot(terminal, i));
+		}
+	}
+	
+	private static void prepareScreen(Terminal terminal) {
+		String text = "Punkty: ";
+		
+		terminal.moveCursor(5, 0);
+		for (char c : text.toCharArray()) {
+			terminal.putCharacter(c);
+		}
+		
+		dodajPunkty(terminal);
+		
+		terminal.moveCursor(0,1);
+		for (int i = 0; i < terminal.getTerminalSize().getColumns(); i++) {
+			terminal.putCharacter('▔');
+		}
+		
+		terminal.moveCursor(0,terminal.getTerminalSize().getRows()-6);
+		for (int i = 0; i < terminal.getTerminalSize().getColumns(); i++) {
+			terminal.putCharacter('▔');
+		}
+		
+		terminal.moveCursor(0,terminal.getTerminalSize().getRows()-2);
+		for (int i = 0; i < terminal.getTerminalSize().getColumns(); i++) {
+			terminal.putCharacter('▔');
+		}
+		
+		text = "poruszanie: ↑ ↓    strzał: spacja    wyjście: esc    nowa gra: enter";
+		
+		terminal.moveCursor(22, terminal.getTerminalSize().getColumns());
+		for (char c : text.toCharArray()) {
+			terminal.putCharacter(c);
+		}
+	}
+	
+	private static void dodajPunkty(Terminal terminal){
+		punkty += 1;
+		terminal.moveCursor(13, 0);
+		
+		for (char c : String.valueOf(punkty).toCharArray()) {
+			terminal.putCharacter(c);
+		}
+	}
+	
+	private static void gameOver(Terminal terminal){
+		terminal.setCursorVisible(false);
+		terminal.moveCursor(
+				(terminal.getTerminalSize().getColumns()/2)-5,
+				(terminal.getTerminalSize().getRows()/2)-1
+				);
+		for (int i = 0; i < 11; i++) {
+			terminal.putCharacter(' ');
+		}
+		
+		terminal.moveCursor(
+				(terminal.getTerminalSize().getColumns()/2)-5,
+				(terminal.getTerminalSize().getRows()/2)
+		);
+		
+		String text = " GAME OVER ";
+		for (char c : text.toCharArray()) {
+			terminal.putCharacter(c);
+		}
+		
+		
+		terminal.moveCursor(
+				(terminal.getTerminalSize().getColumns()/2)-5,
+				(terminal.getTerminalSize().getRows()/2)+1
+		);
+		for (int i = 0; i < 11; i++) {
+			terminal.putCharacter(' ');
+		}
+		
+		while (true){
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+			Key input = terminal.readInput();
+			if (input != null){
+				continue;
+			}
+			if (input.getKind() == Key.Kind.Enter){
+				SpaceInvaders.play();
+			} else if (input.getKind() == Key.Kind.Escape) {
+				menu.menu.menu();
+			}
 		}
 	}
 }

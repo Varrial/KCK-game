@@ -12,8 +12,8 @@ public class Bot {
 	private Terminal terminal;
 	private int minX = 0;
 	private int maxX = 99;
-	private int minY = 0;
-	private int maxY = 25;
+	private int minY = 2;
+	private int maxY = 24;
 	
 	public Bot(Terminal terminal){
 		X = getRandomNumber(minX, maxX);
@@ -35,7 +35,7 @@ public class Bot {
 		terminal.putCharacter('V');
 	}
 	
-	public void move(){
+	public boolean moveAndCheckGameOver(){
 		terminal.moveCursor(X, Y);
 		terminal.putCharacter(' ');
 		
@@ -55,11 +55,11 @@ public class Bot {
 			Y += 1;
 		}
 		else {
-		
+			return true;
 		}
 		terminal.moveCursor(X, Y);
 		terminal.putCharacter('V');
-		
+		return false;
 	}
 	
 	public void remove(){
